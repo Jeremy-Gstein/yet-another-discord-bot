@@ -2,26 +2,9 @@ use poise::serenity_prelude as serenity;
 use dotenv;
 use std::process::Command;
 
-
-
-
-
 struct Data {} // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-
-/// Displays your or another user's account creation date
-#[poise::command(slash_command, prefix_command)]
-async fn age(
-    ctx: Context<'_>,
-    #[description = "Selected user"] user: Option<serenity::User>,
-) -> Result<(), Error> {
-    let u = user.as_ref().unwrap_or_else(|| ctx.author());
-    let response = format!("{}'s account was created at {}", u.name, u.created_at());
-    ctx.say(response).await?;
-    Ok(())
-}
-
 
 
 /// Execute a command.
@@ -40,9 +23,41 @@ async fn sudo(
     Ok(())
 }
 
+/// `whois` command. Lookup registered domain information.
+#[poise::command(slash_command, prefix_command, broadcast_typing)]
+async fn whois(
+    ctx: Context<'_>,
+    #[description = "--help"] cmd: String,
+) -> Result<(), Error> {
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(format!("whois {} | head -n 5", &cmd))
+        .output()
+        .expect("Failed to run command");
+    let stdout = String::from_utf8(output.stdout)
+        .expect("Failed at stdout");
+    let response = format!("stdout:\n`{}`", stdout);
+    ctx.say(response).await?;
+    Ok(())
+} 
 
-
-
+/// dnsutils `dig` command. Lookup DNS records.
+#[poise::command(slash_command, prefix_command)]
+async fn dig(
+    ctx: Context<'_>,
+    #[description = "`-h | head -n 3` for usage"] cmd: String,
+) -> Result<(), Error> {
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(format!("dig {}", &cmd))
+        .output()
+        .expect("Failed to run command");
+    let stdout = String::from_utf8(output.stdout)
+        .expect("Failed to read from output.stdout");
+    let response = format!("stdout:\n`{}`", stdout);
+    ctx.say(response).await?;
+    Ok(())
+}
 
 /// Mock ping command for your or another user's account.
 #[poise::command(slash_command, prefix_command)]
@@ -57,8 +72,6 @@ async fn ping(
     Ok(())
 }
 
-
-
 #[tokio::main]
 async fn main() {
     let token = dotenv::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
@@ -66,7 +79,7 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![age(), ping(), sudo()],
+            commands: vec![ping(), sudo(), dig(), whois()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
