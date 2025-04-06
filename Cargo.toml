@@ -1,9 +1,9 @@
 [package]
 name = "crabby"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 dotenv = "0.15.0"
-poise = "0.6.1"
+poise = { git = "https://github.com/serenity-rs/poise", branch = "current", features = ["collector"] }
 tokio = { version = "1.39.2", features = ["rt-multi-thread"] }
