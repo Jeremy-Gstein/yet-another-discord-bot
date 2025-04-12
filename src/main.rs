@@ -69,7 +69,8 @@ async fn sudo(
 
     let final_embed = CreateEmbed::default()
         .title(format!("Finished Command: {}", cmd))
-        .description(format!("```sh\n{}\n```", output));
+        .description(format!("```sh\n{}\n```", output))
+        .field("Status:", format!("{}", final_status), true);
     msg.edit(ctx, CreateReply::default().embed(final_embed)).await?;
 
     Ok(())
