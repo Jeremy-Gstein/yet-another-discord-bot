@@ -1,9 +1,9 @@
 [package]
-name = "crabby"
+name = "bday"
+description = "Yet another discord bot (yadb | bday)"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dotenv = "0.15.0"
 poise = { git = "https://github.com/serenity-rs/poise", branch = "current", features = ["collector"] }
-tokio = { version = "1.39.2", features = ["rt-multi-thread"] }
+tokio = { version = "1.39.2", features = ["process", "rt-multi-thread"] }
