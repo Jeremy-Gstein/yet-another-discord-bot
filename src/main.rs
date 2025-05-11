@@ -87,7 +87,6 @@ async fn handle_line(
     cmd: &str,
 ) -> Result<(), Error> {
     const MAX_CONTENT_LEN: usize = 4000; // discord max is 4096
-    
 
     // check if line is already truncated, if it is stop loop
     if output.contains("\n[...truncated...]") {
