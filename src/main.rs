@@ -250,7 +250,10 @@ async fn gif(
     let end_time = start_time + duration;
 
     let temp_id = Uuid::new_v4();
-    let input_file = format!("/tmp/{}.webm", temp_id);
+    let temp_dir = format!("/tmp/{}", temp_id);
+    tokio::fs::create_dir_all(&temp_dir).await?;
+
+    let output_pattern = format!("{}/%(title)s.%(ext)s", temp_dir);
     let output_file = format!("/tmp/{}.gif", temp_id);
 
     // Download video segment with yt-dlp
@@ -262,7 +265,7 @@ async fn gif(
                 format_timestamp(end_time)
             ),
             "--force-keyframes-at-cuts",
-            "--output", &input_file,
+            "--output", &output_pattern,
             "--no-simulate",
             &clean_url,
         ])
@@ -270,19 +273,43 @@ async fn gif(
         .await?;
 
     if !yt_dlp_status.success() {
-        cleanup_files(&[&input_file, &output_file]).await;
+        cleanup_files(&[&temp_dir, &output_file]).await;
         msg_handle.edit(ctx, CreateReply::default()
             .content("❌ Error downloading video segment"))
         .await?;
         return Ok(());
     }
 
+    // Find the downloaded file (assumes .webm or .mp4)
+    let mut entries = tokio::fs::read_dir(&temp_dir).await?;
+    let mut input_file = None;
+    while let Some(entry) = entries.next_entry().await? {
+        let path = entry.path();
+        if let Some(ext) = path.extension() {
+            if ext == "webm" || ext == "mp4" {
+                input_file = Some(path);
+                break;
+            }
+        }
+    }
+
+    let input_file = match input_file {
+        Some(path) => path,
+        None => {
+            cleanup_files(&[&temp_dir, &output_file]).await;
+            msg_handle.edit(ctx, CreateReply::default()
+                .content("❌ Couldn't find downloaded video file"))
+            .await?;
+            return Ok(());
+        }
+    };
+
     // Convert to GIF with ffmpeg
     let ffmpeg_status = Command::new("ffmpeg")
         .args(&[
             "-y",
             "-t", &duration.to_string(),
-            "-i", &input_file,
+            "-i", input_file.to_str().unwrap(),
             "-vf", "fps=10,scale=640:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
             "-loop", "0",
             &output_file
@@ -290,7 +317,7 @@ async fn gif(
         .status()
         .await?;
 
-    cleanup_files(&[&input_file]).await;
+    cleanup_files(&[&temp_dir]).await;
 
     if !ffmpeg_status.success() {
         cleanup_files(&[&output_file]).await;
@@ -319,7 +346,7 @@ async fn gif(
     Ok(())
 }
 
-// Helper functions
+// Helper functions remain unchanged
 
 async fn handle_gif_attachment(path: &str) -> Result<CreateAttachment, String> {
     let gif_bytes = tokio::fs::read(path)
@@ -386,6 +413,7 @@ fn format_timestamp(seconds: u64) -> String {
 async fn cleanup_files(files: &[&str]) {
     for file in files {
         let _ = tokio::fs::remove_file(file).await;
+        let _ = tokio::fs::remove_dir_all(file).await;
     }
 }
 

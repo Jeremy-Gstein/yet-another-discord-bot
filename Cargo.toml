@@ -13,3 +13,4 @@ uuid = { version = "1.16.0", features = ["fast-rng", "v4"] }
 [profile.release]
 lto = true
 codegen-units = 1
+
