@@ -5,9 +5,10 @@ WORKDIR /usr/src/bday
 # Install cross-compile toolchain
 RUN apk add --no-cache \
   musl-dev \
+  musl-tools \
   build-base \
-  gcc \
-  aarch64-linux-musl-gcc \
+  pkg-config \ 
+  gcc-aarch64-linux-gnu \
   libc-dev \
   bash
 
@@ -20,8 +21,8 @@ COPY src/ ./src/
 COPY .cargo/config.toml ./.config/config.toml
 
 # Build for ARM64 (aarch64)
-RUN cargo build --release --target x86_64-unknown-linux-musl
-RUN strip target/x86_64-unknown-linux-musl/release/bday
+RUN cargo build --release --target aarch64-unknown-linux-musl
+RUN strip target/aarch64-unknown-linux-musl/release/bday
 
 # Stage 2: runtime dependencies
 FROM alpine:latest
