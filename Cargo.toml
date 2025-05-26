@@ -1,0 +1,16 @@
+[package]
+name = "bday"
+description = "Yet another discord bot (yadb | bday)"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dotenv = "0.15.0"
+poise = { git = "https://github.com/serenity-rs/poise", branch = "current", features = ["cache", "collector"] }
+tokio = { version = "1.39.2", features = ["macros", "process", "rt-multi-thread"] }
+uuid = { version = "1.16.0", features = ["fast-rng", "v4"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+
