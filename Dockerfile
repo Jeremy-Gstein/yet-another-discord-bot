@@ -3,15 +3,7 @@ FROM rust:alpine AS builder
 WORKDIR /usr/src/bday
 
 # Install cross-compile toolchain
-RUN apk add --no-cache \
-  musl-dev \
-  musl-tools \
-  build-base \
-  pkg-config \ 
-  gcc-aarch64-linux-gnu \
-  libc-dev \
-  bash
-
+RUN apk add --no-cache musl-dev 
 # Add target system to rustup
 RUN rustup target add aarch64-unknown-linux-musl
 
