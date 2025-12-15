@@ -10,14 +10,14 @@ RUN rustup target add aarch64-unknown-linux-musl
 # Copy project files to build from source code (Cargo.toml/lock, src/)
 COPY Cargo.toml Cargo.lock .
 COPY src/ ./src/
-COPY .cargo/config.toml ./.config/config.toml
+COPY .cargo/config.toml .config/config.toml
 
 # Build for ARM64 (aarch64)
 RUN cargo build --release --target aarch64-unknown-linux-musl
 RUN strip target/aarch64-unknown-linux-musl/release/bday
 
 # Stage 2: runtime dependencies
-FROM alpine:latest
+FROM alpine:3.19
 WORKDIR /app-cache
 # Get yt_dlp and dependencies
 RUN apk add --no-cache \
@@ -28,7 +28,7 @@ RUN apk add --no-cache \
 
 
 # Add ShodOS identifiers to /etc/os-release
-RUN  echo 'NAME="ShodOS"\nVERSION="1.0"\nID=shodos\nPRETTY_NAME="ShodOS 1.0"' > /etc/os-release 
+RUN  printf 'NAME="ShodOS"\nVERSION="1.0"\nID=shodos\nPRETTY_NAME="ShodOS 1.0"\n' > /etc/os-release 
 
 # Copy python script to a dir in PATH and make executable
 COPY --from=builder /usr/src/bday/target/aarch64-unknown-linux-musl/release/bday /usr/local/bin/
