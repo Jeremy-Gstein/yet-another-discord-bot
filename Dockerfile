@@ -19,12 +19,15 @@ RUN strip target/aarch64-unknown-linux-musl/release/bday
 # Stage 2: runtime dependencies
 FROM alpine:3.19
 WORKDIR /app-cache
-# Get yt_dlp and dependencies
+# Get yt_dlp and dependencies (nodejs because we cant download a .mp4 without javascript 02/27/2026)
 RUN apk add --no-cache \
   python3 \
   py3-pip \
-  ffmpeg &&\
-  pip install --break-system-packages yt_dlp boto3
+  ffmpeg \
+  nodejs \
+  npm
+
+RUN pip install --break-system-packages yt_dlp boto3
 
 
 # Add ShodOS identifiers to /etc/os-release
