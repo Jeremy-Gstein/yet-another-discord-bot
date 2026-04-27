@@ -3,7 +3,7 @@ FROM rust:alpine AS builder
 WORKDIR /usr/src/bday
 
 # Install cross-compile toolchain
-RUN apk add --no-cache musl-dev 
+RUN apk add --no-cache musl-dev
 # Add target system to rustup
 RUN rustup target add aarch64-unknown-linux-musl
 
@@ -19,19 +19,18 @@ RUN strip target/aarch64-unknown-linux-musl/release/bday
 # Stage 2: runtime dependencies
 FROM alpine:3.19
 WORKDIR /app-cache
-# Get yt_dlp and dependencies (nodejs because we cant download a .mp4 without javascript 02/27/2026)
+# Get yt_dlp and dependencies
 RUN apk add --no-cache \
-  python3 \
-  py3-pip \
-  ffmpeg \
-  nodejs \
-  npm
-
+python3 \
+py3-pip \
+ffmpeg \
+nodejs \
+npm
 RUN pip install --break-system-packages yt_dlp boto3
 
 
 # Add ShodOS identifiers to /etc/os-release
-RUN  printf 'NAME="ShodOS"\nVERSION="1.0"\nID=shodos\nPRETTY_NAME="ShodOS 1.0"\n' > /etc/os-release 
+RUN  printf 'NAME="ShodOS"\nVERSION="1.0"\nID=shodos\nPRETTY_NAME="ShodOS 1.0"\n' > /etc/os-release
 
 # Copy python script to a dir in PATH and make executable
 COPY --from=builder /usr/src/bday/target/aarch64-unknown-linux-musl/release/bday /usr/local/bin/

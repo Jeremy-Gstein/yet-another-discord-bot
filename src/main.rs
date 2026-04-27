@@ -171,8 +171,25 @@ async fn mp3(
         .ephemeral(false))
         .await?;
 
-    let temp_id = Uuid::new_v4();
-    let temp_file = format!("/tmp/{}.mp3", temp_id);
+    // Fetch video title first
+    let title_output = Command::new("yt-dlp")
+        .args(&["--get-title", "--no-playlist", &url])
+        .output()
+        .await?;
+
+    let video_title = if title_output.status.success() {
+        let raw = String::from_utf8_lossy(&title_output.stdout).trim().to_string();
+        // Replace spaces and sanitize for use as a filename
+        raw.chars()
+            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .collect::<String>()
+    } else {
+        // Fallback to UUID if title fetch fails
+        Uuid::new_v4().to_string()
+    };
+
+    let temp_file = format!("/tmp/{}.mp3", Uuid::new_v4());
+    let attachment_name = format!("{}.mp3", video_title);
 
     // Download and convert
     let yt_dlp_status = Command::new("yt-dlp")
@@ -193,8 +210,6 @@ async fn mp3(
         .arg(&temp_file)
         .output()
         .await?;
-
-    //let _ = tokio::fs::remove_file(&temp_file).await;
 
     let r2_url = if create_r2_output.status.success() {
         String::from_utf8(create_r2_output.stdout)?.trim().to_string()
@@ -222,12 +237,12 @@ async fn mp3(
         msg_handle.edit(ctx, CreateReply::default()
             .content(format!("🎵 Download ready: {}\n⚠️ File too large for preview attachment", r2_url)))
             .await?;
-        } else {
-            let attachment = CreateAttachment::bytes(file_bytes, "preview.mp3");
-            msg_handle.edit(ctx, CreateReply::default()
-                .content(format!("🎵 Download ready: {}", r2_url))
-                .attachment(attachment))
-                .await?;
+    } else {
+        let attachment = CreateAttachment::bytes(file_bytes, attachment_name);
+        msg_handle.edit(ctx, CreateReply::default()
+            .content(format!("🎵 Download ready: {}", r2_url))
+            .attachment(attachment))
+            .await?;
     }
 
     Ok(())
